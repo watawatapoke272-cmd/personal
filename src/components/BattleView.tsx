@@ -8,6 +8,8 @@ import type { GameData, GameId } from '../types'
 import { TypeChip } from './Chips'
 import { MovePicker } from './MovePicker'
 import { PokemonPicker } from './PokemonPicker'
+import { RaidPanel } from './RaidPanel'
+import { Sprite } from './Sprite'
 
 interface Props {
   game: GameId
@@ -20,19 +22,20 @@ interface Props {
 const SPEED_LABEL = { faster: '先手', slower: '後手', unclear: '同程度' } as const
 const OUTCOME_LABEL: Record<Outcome, string> = { win: '有利', close: '互角', lose: '不利', none: '―' }
 
-type Saved = { strong: boolean; weather: 'sun' | 'rain' | null; myTera: boolean; withBox: boolean }
+type Saved = { raid: boolean; strong: boolean; weather: 'sun' | 'rain' | null; myTera: boolean; withBox: boolean }
 const OPT_KEY = 'pokemon-app:battle-options'
 function loadSaved(): Saved {
   try {
     const raw = JSON.parse(localStorage.getItem(OPT_KEY) ?? 'null') as Partial<Saved> | null
     return {
+      raid: !!raw?.raid,
       strong: !!raw?.strong,
       weather: raw?.weather === 'sun' || raw?.weather === 'rain' ? raw.weather : null,
       myTera: !!raw?.myTera,
       withBox: !!raw?.withBox,
     }
   } catch {
-    return { strong: false, weather: null, myTera: false, withBox: false }
+    return { raid: false, strong: false, weather: null, myTera: false, withBox: false }
   }
 }
 
@@ -102,14 +105,22 @@ export function BattleView({ game, data, api, enemy, setEnemy }: Props) {
   }
 
   const best = advice?.pick?.best?.calc
+  const raid = hasTera && opts.raid
 
   return (
     <div className="view battle">
-      <h2>相手のポケモン</h2>
+      {hasTera && (
+        <div className="seg wide" role="group" aria-label="モード">
+          <button className={!raid ? 'on' : ''} onClick={() => setOpts({ ...opts, raid: false })}>通常バトル</button>
+          <button className={raid ? 'on' : ''} onClick={() => setOpts({ ...opts, raid: true })}>テラレイド</button>
+        </div>
+      )}
+      <h2>{raid ? 'レイドボス' : '相手のポケモン'}</h2>
       <div className="card enemy">
         <button className="species-btn" onClick={() => setPicking({ kind: 'enemy' })}>
           {enemyP ? (
             <>
+              <Sprite id={enemyP.id} size={56} />
               <span className="pick-name">{enemyP.name}</span>
               <span>{enemyP.types.map((t) => <TypeChip key={t} data={data} slug={t} />)}</span>
               <small>変更</small>
@@ -122,7 +133,7 @@ export function BattleView({ game, data, api, enemy, setEnemy }: Props) {
         {enemy && enemyP && (
           <>
             <div className="grid2">
-              <label>
+              {!raid && <label>
                 相手のLv（任意）
                 <input
                   type="number" inputMode="numeric" min={1} max={100} placeholder="不明"
@@ -132,7 +143,7 @@ export function BattleView({ game, data, api, enemy, setEnemy }: Props) {
                     setEnemy({ ...enemy, level: v })
                   }}
                 />
-              </label>
+              </label>}
               <label>
                 特性（分かれば）
                 <select value={enemy.ability ?? ''} onChange={(e) => setEnemy({ ...enemy, ability: e.target.value || null })}>
@@ -146,9 +157,9 @@ export function BattleView({ game, data, api, enemy, setEnemy }: Props) {
               </label>
               {hasTera && (
                 <label>
-                  テラスタル
+                  {raid ? 'レイドのテラスタイプ' : 'テラスタル'}
                   <select value={enemy.tera ?? ''} onChange={(e) => setEnemy({ ...enemy, tera: e.target.value || null })}>
-                    <option value="">していない/不明</option>
+                    <option value="">{raid ? '選んでください' : 'していない/不明'}</option>
                     {data.types.types.map((t) => (
                       <option key={t.slug} value={t.slug}>{t.name}</option>
                     ))}
@@ -157,7 +168,7 @@ export function BattleView({ game, data, api, enemy, setEnemy }: Props) {
               )}
             </div>
 
-            <div className="field">
+            {!raid && <div className="field">
               相手の技（分かるものだけ。未入力ならタイプ一致技で想定）
               <ul className="move-slots small">
                 {enemy.moves.map((id, i) => {
@@ -171,13 +182,19 @@ export function BattleView({ game, data, api, enemy, setEnemy }: Props) {
                   )
                 })}
               </ul>
-            </div>
+            </div>}
           </>
         )}
         {enemy && <button className="ghost small" onClick={() => setEnemy(null)}>入力をクリア</button>}
       </div>
 
-      <h2>計算の条件</h2>
+      {raid && !enemy && <p className="muted">レイドボスの元のポケモンを選び、テラスタイプを指定してください。</p>}
+      {raid && enemy && !enemy.tera && <p className="muted">レイドのテラスタイプを選ぶと、おすすめが出ます。</p>}
+      {raid && enemy && enemy.tera && (
+        <RaidPanel data={data} boss={{ slug: enemy.slug, tera: enemy.tera, ability: enemy.ability }} pool={pool} />
+      )}
+
+      {!raid && <><h2>計算の条件</h2>
       <div className="card opts">
         <div className="field">
           相手の能力の見積もり
@@ -210,11 +227,11 @@ export function BattleView({ game, data, api, enemy, setEnemy }: Props) {
           />
           ボックスの手持ちも候補に含める{noParty && '（パーティが空なので含めています）'}
         </label>
-      </div>
+      </div></>}
 
-      {!enemy && <p className="muted">相手のポケモンを選ぶと、選出と技の提案が出ます。</p>}
+      {!raid && !enemy && <p className="muted">相手のポケモンを選ぶと、選出と技の提案が出ます。</p>}
 
-      {advice && (
+      {!raid && advice && (
         <>
           <div className="card headline">{advice.headline}</div>
           {best && advice.pick && (

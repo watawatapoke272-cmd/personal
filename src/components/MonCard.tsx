@@ -1,5 +1,6 @@
 import type { GameData, GameId, OwnedPokemon } from '../types'
 import { TypeChip } from './Chips'
+import { Sprite } from './Sprite'
 
 export function monTitle(mon: OwnedPokemon, data: GameData): string {
   const base = data.pokemonBySlug.get(mon.slug)?.name ?? mon.slug
@@ -24,6 +25,7 @@ export function MonCard({ mon, data, game, onOpen, onMove, index }: Props) {
       <button className="mon-main" onClick={onOpen}>
         <div className="mon-head">
           {index !== undefined && <span className="slot-no">{index + 1}</span>}
+          {p && <Sprite id={p.id} size={40} />}
           <span className="mon-name">{monTitle(mon, data)}</span>
           <span className="mon-lv">Lv.{mon.level}</span>
         </div>

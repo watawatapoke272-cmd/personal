@@ -238,3 +238,12 @@ h3.sub { margin: 14px 0 6px; color: var(--muted); }
 .move-slots.small button { padding: 8px 10px; }
 .opts { padding: 10px 14px; display: flex; flex-direction: column; gap: 10px; }
 .opts select { color: var(--text); }
+
+/* スプライト・レイド */
+.sprite { image-rendering: pixelated; object-fit: contain; flex: none; vertical-align: middle; }
+.mon-head { align-items: center; }
+.raid-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.raid-item { display: flex; gap: 8px; align-items: center; }
+.raid-body { min-width: 0; }
+.raid-sub { font-size: 0.85rem; color: var(--muted); }
+.pick-list .pick-name { flex: 1; }

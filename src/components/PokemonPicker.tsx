@@ -3,6 +3,7 @@ import { inDex } from '../data'
 import { norm } from '../text'
 import type { GameData, PokemonData } from '../types'
 import { TypeChip } from './Chips'
+import { Sprite } from './Sprite'
 
 interface Props {
   data: GameData
@@ -46,6 +47,7 @@ export function PokemonPicker({ data, onPick, onCancel }: Props) {
         {list.slice(0, 60).map((p) => (
           <li key={p.slug}>
             <button onClick={() => onPick(p)}>
+              <Sprite id={p.id} size={40} />
               <span className="pick-name">{p.name}</span>
               <span>{p.types.map((t) => <TypeChip key={t} data={data} slug={t} />)}</span>
             </button>

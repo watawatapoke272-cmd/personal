@@ -1,7 +1,7 @@
 // オフラインでも開けるようにするための簡単なキャッシュ。
 // 画面(HTML)は「通信できれば最新、だめならキャッシュ」、ファイル類は「キャッシュを先に出して裏で更新」。
 // 手持ちデータ自体はlocalStorageにあり、ここでは扱わない（GAS同期の通信も対象外：別オリジンのため）。
-const CACHE = 'pokemon-app-v1'
+const CACHE = 'pokemon-app-v2'
 
 self.addEventListener('install', () => self.skipWaiting())
 self.addEventListener('activate', (e) => {
@@ -39,6 +39,12 @@ async function staleWhileRevalidate(req) {
 self.addEventListener('fetch', (e) => {
   const req = e.request
   if (req.method !== 'GET') return
-  if (new URL(req.url).origin !== self.location.origin) return
+  const url = new URL(req.url)
+  // スプライト画像（別オリジン）は一度表示できたらキャッシュして、オフラインでも出す
+  if (url.origin === 'https://raw.githubusercontent.com' && url.pathname.startsWith('/PokeAPI/sprites/')) {
+    e.respondWith(staleWhileRevalidate(req))
+    return
+  }
+  if (url.origin !== self.location.origin) return
   e.respondWith(req.mode === 'navigate' ? networkFirst(req) : staleWhileRevalidate(req))
 })

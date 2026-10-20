@@ -1,3 +1,4 @@
+import { Sprite } from './Sprite'
 import { useMemo } from 'react'
 import { dexOrder, learnersOf, METHOD_LABEL } from '../dexIndex'
 import { inDex } from '../data'
@@ -60,7 +61,7 @@ export function PokemonDetail({ slug, data, owned, open }: Common & { slug: stri
 
   return (
     <div className="detail">
-      <h2 className="detail-title">{p.name}</h2>
+      <h2 className="detail-title"><Sprite id={p.id} size={72} /> {p.name}</h2>
       <div className="mon-types">{p.types.map((t) => <TypeChip key={t} data={data} slug={t} />)}</div>
       {!inDex(p) && <p className="muted">このソフトの図鑑には載っていません（HOME連携のみ等）。</p>}
       {mine.length > 0 && <p className="owned-note">手持ち: {mine.map((m) => ownedName(m, data)).join('、')}</p>}
