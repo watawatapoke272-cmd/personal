@@ -4,6 +4,7 @@ import { NATURES, STAT_KEYS, STAT_LABEL, natureLabel } from '../natures'
 import { PARTY_MAX, newMon } from '../storage'
 import type { GameData, GameId, OwnedPokemon, PokemonData, StatKey } from '../types'
 import { MoveClass, TypeChip } from './Chips'
+import { ItemPicker } from './ItemPicker'
 import { learnableMoves, MovePicker } from './MovePicker'
 import { PokemonPicker } from './PokemonPicker'
 
@@ -21,7 +22,7 @@ interface Props {
   onClose: () => void
 }
 
-type Sub = { kind: 'species' } | { kind: 'move'; slot: number } | null
+type Sub = { kind: 'species' } | { kind: 'move'; slot: number } | { kind: 'item' } | null
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
 
@@ -72,6 +73,18 @@ export function MonEditor({
           setSub(null)
           if (!mon) onClose()
         }}
+      />
+    )
+  if (sub?.kind === 'item' && mon)
+    return (
+      <ItemPicker
+        data={data}
+        current={mon.item}
+        onPick={(name) => {
+          patch({ item: name })
+          setSub(null)
+        }}
+        onCancel={() => setSub(null)}
       />
     )
   if (sub?.kind === 'move' && species && mon)
@@ -142,10 +155,12 @@ export function MonEditor({
             ))}
           </select>
         </label>
-        <label>
+        <div className="field">
           持ち物
-          <input value={mon.item} onChange={(e) => patch({ item: e.target.value })} />
-        </label>
+          <button className="select-like" onClick={() => setSub({ kind: 'item' })}>
+            {mon.item || <span className="muted">未設定（タップして選ぶ）</span>}
+          </button>
+        </div>
         {hasTera && (
           <label>
             テラスタイプ

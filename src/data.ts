@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type {
-  AbilityData, GameData, GameId, MachineData, MachineSource, MoveData, PokemonData, TypesFile,
+  AbilityData, GameData, GameId, ItemData, MachineData, MachineSource, MoveData, PokemonData, TypesFile,
 } from './types'
 
 export const GAMES: Record<GameId, { label: string; short: string; hasTera: boolean }> = {
@@ -22,13 +22,14 @@ function loadGame(game: GameId): Promise<GameData> {
   let p = gameCache.get(game)
   if (!p) {
     p = (async () => {
-      const [pokemon, moves, abilities, machines, sources] = await Promise.all([
+      const [pokemon, moves, abilities, machines, sources, items] = await Promise.all([
         getJson<PokemonData[]>(`${game}/pokemon.json`),
         getJson<MoveData[]>(`${game}/moves.json`),
         getJson<AbilityData[]>(`${game}/abilities.json`),
         getJson<MachineData[]>(`${game}/machines.json`),
         // 入手情報は無くてもアプリ自体は動くようにする
         getJson<MachineSource[]>(`${game}/machine-sources.json`).catch(() => [] as MachineSource[]),
+        getJson<ItemData[]>(`${game}/items.json`).catch(() => [] as ItemData[]),
       ])
       typesCache ??= getJson<TypesFile>('common/types.json')
       const types = await typesCache
@@ -37,6 +38,8 @@ function loadGame(game: GameId): Promise<GameData> {
         pokemonBySlug: new Map(pokemon.map((x) => [x.slug, x])),
         moves: new Map(moves.map((m) => [m.id, m])),
         abilities: new Map(abilities.map((a) => [a.slug, a])),
+        items,
+        itemByName: new Map(items.map((i) => [i.name, i])),
         machineByMove: new Map(machines.map((m) => [m.moveId, m.label])),
         machines,
         machineSources: new Map(sources.map((x) => [x.label, x])),

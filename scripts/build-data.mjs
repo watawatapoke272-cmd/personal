@@ -67,14 +67,14 @@ const list = async (path) => (await get(`${API}/${path}?limit=5000`)).results.ma
 
 // 日本語名（ゲーム内表記のかな/カタカナを優先）
 function jaName(names, fallback) {
-  const pick = (lang) => names?.find((n) => n.language.name === lang)?.name
+  const pick = (lang) => names?.find((n) => n.language.name.toLowerCase() === lang.toLowerCase())?.name
   return pick('ja-Hrkt') ?? pick('ja') ?? fallback
 }
 function jaFlavor(entries, vg) {
-  const ja = (entries ?? []).filter((e) => ['ja-Hrkt', 'ja'].includes(e.language.name))
+  const ja = (entries ?? []).filter((e) => ['ja-hrkt', 'ja'].includes(e.language.name.toLowerCase()))
   const text =
     ja.find((e) => e.version_group?.name === vg) ??
-    ja.findLast?.((e) => e.language.name === 'ja-Hrkt') ??
+    ja.findLast?.((e) => e.language.name.toLowerCase() === 'ja-hrkt') ??
     ja.at(-1)
   return text ? (text.flavor_text ?? text.text)?.replace(/\s+/g, '') : undefined
 }
@@ -162,6 +162,17 @@ const abilityByName = new Map()
   for (const a of abs) abilityByName.set(a.name, a)
 }
 const moveById = new Map([...moveByName.values()].map((m) => [m.id, m]))
+
+// ---------- 持ち物 ----------
+// 持たせて使うものに絞る（カテゴリ）。そのソフトの世代に存在するもの（game_indices）だけ。
+const ITEM_CATS = new Set([
+  'held-items', 'choice', 'bad-held-items', 'type-enhancement', 'plates', 'species-specific', 'in-a-pinch',
+  'type-protection', 'effort-training', 'jewels', 'memories', 'mega-stones', 'picky-healing',
+])
+const BERRY_CATS = new Set(['medicine', 'status-cures', 'stat-boosts', 'in-a-pinch', 'picky-healing', 'type-protection'])
+console.log('持ち物を取得…')
+const itemsAll = await getAll(await list('item'), 'item')
+const itemGen = { sv: 'generation-ix', swsh: 'generation-viii' }
 
 const report = {}
 for (const [gid, g] of Object.entries(GAMES)) {
@@ -256,6 +267,7 @@ for (const [gid, g] of Object.entries(GAMES)) {
       id, slug: m.name, name: name || m.name, type: v.type,
       class: m.damage_class.name, power: v.power, accuracy: v.accuracy, pp: v.pp,
       priority: m.priority, text: jaFlavor(m.flavor_text_entries, g.vg),
+      minHits: m.meta?.min_hits ?? undefined, maxHits: m.meta?.max_hits ?? undefined,
     })
   }
 
@@ -278,13 +290,21 @@ for (const [gid, g] of Object.entries(GAMES)) {
     })
     .sort((a, b) => (a.kind === b.kind ? a.label.localeCompare(b.label) : a.kind < b.kind ? 1 : -1))
 
+  const itemOut = itemsAll
+    .filter((it) => it.game_indices.some((x) => x.generation.name === itemGen[gid]))
+    .filter((it) => ITEM_CATS.has(it.category.name) || (it.name.endsWith('-berry') && BERRY_CATS.has(it.category.name)))
+    .map((it) => ({ slug: it.name, name: jaName(it.names, ''), cat: it.category.name, text: jaFlavor(it.flavor_text_entries, g.vg) }))
+    .filter((it) => it.name)
+    .sort((a, b) => a.name.localeCompare(b.name, 'ja'))
+
   const dir = join(OUT, gid)
   await mkdir(dir, { recursive: true })
+  await writeFile(join(dir, 'items.json'), JSON.stringify(itemOut))
   await writeFile(join(dir, 'pokemon.json'), JSON.stringify(mons))
   await writeFile(join(dir, 'moves.json'), JSON.stringify(moveOut))
   await writeFile(join(dir, 'abilities.json'), JSON.stringify(abilityOut))
   await writeFile(join(dir, 'machines.json'), JSON.stringify(machineOut))
-  rep.counts = { pokemon: mons.length, moves: moveOut.length, abilities: abilityOut.length, machines: machineOut.length }
+  rep.counts = { items: itemOut.length, pokemon: mons.length, moves: moveOut.length, abilities: abilityOut.length, machines: machineOut.length }
   console.log(`[${gid}]`, rep.counts)
 }
 

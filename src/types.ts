@@ -34,6 +34,16 @@ export interface MoveData {
   pp: number | null
   priority: number
   text?: string
+  /** 連続技の回数（2〜5回など）。連続技でなければ無し */
+  minHits?: number
+  maxHits?: number
+}
+
+export interface ItemData {
+  slug: string
+  name: string
+  cat: string
+  text?: string
 }
 
 export interface AbilityData {
@@ -81,6 +91,9 @@ export interface GameData {
   pokemonBySlug: Map<string, PokemonData>
   moves: Map<number, MoveData>
   abilities: Map<string, AbilityData>
+  items: ItemData[]
+  /** 日本語名 → 持ち物（手持ちには日本語名で保存している） */
+  itemByName: Map<string, ItemData>
   /** 技ID → TM/TR 番号 */
   machineByMove: Map<number, string>
   /** 技マシン/レコード一覧（番号順） */
