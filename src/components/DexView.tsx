@@ -7,11 +7,13 @@ import { MoveClass, TypeChip } from './Chips'
 import { MachineDetail, MoveDetail, PokemonDetail } from './DexDetails'
 import type { Overlay } from './DexDetails'
 import { sourceSummary } from './MachineSourceBlock'
+import type { WishApi } from '../wishlist'
 
 interface Props {
   game: GameId
   data: GameData
   owned: OwnedPokemon[]
+  wish: WishApi
   /** 他の画面から、このポケモンの詳細を開いた状態で始める */
   initialSlug?: string
   /** 他の画面から開いたとき、最初の詳細で「戻る」を押したときの動作 */
@@ -25,7 +27,7 @@ const SUBS: { id: Sub; label: string }[] = [
   { id: 'move', label: '技' },
 ]
 
-export function DexView({ game, data, owned, initialSlug, onExit }: Props) {
+export function DexView({ game, data, owned, wish, initialSlug, onExit }: Props) {
   const [sub, setSub] = useState<Sub>(initialSlug ? 'pokemon' : 'tm')
   const [stack, setStack] = useState<Overlay[]>(initialSlug ? [{ kind: 'pokemon', slug: initialSlug }] : [])
   const open = (o: Overlay) => setStack((s) => [...s, o])
@@ -54,7 +56,7 @@ export function DexView({ game, data, owned, initialSlug, onExit }: Props) {
               <button onClick={back}>← 戻る</button>
               {stack.length > 1 && <button className="ghost" onClick={() => setStack([])}>閉じる</button>}
             </div>
-            {top.kind === 'pokemon' && <PokemonDetail key={top.slug} slug={top.slug} game={game} data={data} owned={owned} open={open} />}
+            {top.kind === 'pokemon' && <PokemonDetail key={top.slug} slug={top.slug} game={game} data={data} owned={owned} open={open} wish={wish} />}
             {top.kind === 'move' && <MoveDetail key={top.id} id={top.id} game={game} data={data} owned={owned} open={open} />}
             {top.kind === 'machine' && <MachineDetail key={top.label} label={top.label} game={game} data={data} owned={owned} open={open} />}
           </div>

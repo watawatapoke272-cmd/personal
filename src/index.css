@@ -269,3 +269,9 @@ h3.sub { margin: 14px 0 6px; color: var(--muted); }
 .boss-body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .boss-move { display: inline-block; margin: 0 6px 0 0; }
 .encounter { border-top: 1px solid var(--border); padding: 8px 0; display: flex; flex-direction: column; gap: 2px; }
+
+/* ほしいポケモン */
+.card.wish { display: flex; gap: 8px; padding: 10px 12px; align-items: flex-start; }
+.wish-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.wish-memo { width: 100%; resize: vertical; }
+.wish-in { font-size: 0.85rem; }

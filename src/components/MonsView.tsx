@@ -7,6 +7,8 @@ import { MonCard, monTitle } from './MonCard'
 import { MonEditor } from './MonEditor'
 import { PartyWeakness } from './PartyWeakness'
 import { SyncPanel } from './SyncPanel'
+import { WishList } from './WishList'
+import type { WishApi } from '../wishlist'
 import type { SyncApi } from '../sync'
 
 interface Props {
@@ -14,11 +16,13 @@ interface Props {
   data: GameData
   api: SaveApi
   sync: SyncApi
+  wish: WishApi
+  onOpenDex: (slug: string) => void
 }
 
 type Editing = { id: string | null; place: 'party' | 'box' } | null
 
-export function MonsView({ game, data, api, sync }: Props) {
+export function MonsView({ game, data, api, sync, wish, onOpenDex }: Props) {
   const { save } = api
   const [editing, setEditing] = useState<Editing>(null)
   const [q, setQ] = useState('')
@@ -109,6 +113,8 @@ export function MonsView({ game, data, api, sync }: Props) {
           <p className="muted">{boxTotal === 0 ? 'まだ登録がありません。「＋ 追加」から登録します。' : '該当なし'}</p>
         )}
       </div>
+
+      <WishList data={data} wish={wish} onOpenDex={onOpenDex} ownedSlugs={new Set(Object.values(save.mons).map((m) => m.slug))} />
 
       <h2>同期・バックアップ</h2>
       <SyncPanel sync={sync} />

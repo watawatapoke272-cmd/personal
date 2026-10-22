@@ -7,6 +7,8 @@ import { norm } from '../text'
 import type { GameData, GameId, PokemonData } from '../types'
 import { TypeChip } from './Chips'
 import { Sprite } from './Sprite'
+import { WishButton } from './WishButton'
+import type { WishApi } from '../wishlist'
 
 interface Props {
   game: GameId
@@ -17,6 +19,7 @@ interface Props {
   onUseRaid: (e: Enemy) => void
   /** 図鑑のポケモン詳細を開く */
   onOpenDex: (slug: string) => void
+  wish: WishApi
 }
 
 type Sub = 'ai' | 'dlc' | 'legend' | 'raid'
@@ -37,7 +40,7 @@ const LEGEND_GROUPS: { title: string; slugs: string[] }[] = [
 
 const GAME_TAG: Record<BossBattle['game'], string> = { V: 'バイオレット', Sc: 'スカーレット', SV: '' }
 
-export function BossView({ game, data, onUseEnemy, onUseRaid, onOpenDex }: Props) {
+export function BossView({ game, data, onUseEnemy, onUseRaid, onOpenDex, wish }: Props) {
   const [sub, setSub] = useState<Sub>('ai')
   const boss = useBosses()
 
@@ -51,7 +54,7 @@ export function BossView({ game, data, onUseEnemy, onUseRaid, onOpenDex }: Props
         ))}
       </div>
 
-      {sub === 'legend' && <Legends data={data} file={boss.status === 'ready' ? boss.data : null} onUseEnemy={onUseEnemy} onOpenDex={onOpenDex} />}
+      {sub === 'legend' && <Legends data={data} file={boss.status === 'ready' ? boss.data : null} onUseEnemy={onUseEnemy} onOpenDex={onOpenDex} wish={wish} />}
       {sub !== 'legend' && boss.status === 'loading' && <p className="muted">読み込み中…</p>}
       {sub !== 'legend' && boss.status === 'error' && (
         <div className="banner warn">ボスデータを読み込めませんでした（{boss.message}）。<code>npm run build-bosses</code> で作成できます。</div>
@@ -139,7 +142,7 @@ function Member({ m, data, file, onUseEnemy, onOpenDex }: {
 
 // ---- 準伝説・伝説 ----
 
-function Legends({ data, file, onUseEnemy, onOpenDex }: { data: GameData; file: BossesFile | null; onUseEnemy: (e: Enemy) => void; onOpenDex: (slug: string) => void }) {
+function Legends({ data, file, onUseEnemy, onOpenDex, wish }: { data: GameData; file: BossesFile | null; onUseEnemy: (e: Enemy) => void; onOpenDex: (slug: string) => void; wish: WishApi }) {
   return (
     <>
       <p className="muted">
@@ -151,7 +154,7 @@ function Legends({ data, file, onUseEnemy, onOpenDex }: { data: GameData; file: 
           <h3>{g.title}</h3>
           {g.slugs.map((s) => {
             const p = data.pokemonBySlug.get(s)
-            return p ? <Legend key={s} p={p} data={data} file={file} onUseEnemy={onUseEnemy} onOpenDex={onOpenDex} /> : null
+            return p ? <Legend key={s} p={p} data={data} file={file} onUseEnemy={onUseEnemy} onOpenDex={onOpenDex} wish={wish} /> : null
           })}
         </section>
       ))}
@@ -161,7 +164,7 @@ function Legends({ data, file, onUseEnemy, onOpenDex }: { data: GameData; file: 
 
 const STAT_LABEL = { hp: 'H', atk: 'A', def: 'B', spa: 'C', spd: 'D', spe: 'S' } as const
 
-function Legend({ p, data, file, onUseEnemy, onOpenDex }: { p: PokemonData; data: GameData; file: BossesFile | null; onUseEnemy: (e: Enemy) => void; onOpenDex: (slug: string) => void }) {
+function Legend({ p, data, file, onUseEnemy, onOpenDex, wish }: { p: PokemonData; data: GameData; file: BossesFile | null; onUseEnemy: (e: Enemy) => void; onOpenDex: (slug: string) => void; wish: WishApi }) {
   const weak = useMemo(
     () => data.types.types
       .filter((t) => t.slug !== 'stellar')
@@ -195,6 +198,7 @@ function Legend({ p, data, file, onUseEnemy, onOpenDex }: { p: PokemonData; data
         バトル支援でこの相手と比べる
       </button>
       <button className="ghost small" onClick={() => onOpenDex(p.slug)}>図鑑で見る（覚える技）</button>
+      <WishButton wish={wish} slug={p.slug} memo="準伝説・伝説" />
     </details>
   )
 }

@@ -9,6 +9,7 @@ import { SyncBadge } from './components/SyncPanel'
 import { GAMES, useGameData } from './data'
 import { loadGameChoice, saveGameChoice, useSave } from './storage'
 import { useSync } from './sync'
+import { useWishlist } from './wishlist'
 import type { GameId } from './types'
 
 type Tab = 'mons' | 'dex' | 'battle' | 'boss'
@@ -27,6 +28,7 @@ export default function App() {
   const [dexOpen, setDexOpen] = useState<{ slug: string; from: Tab } | null>(null)
   const api = useSave(game)
   const sync = useSync(game, api)
+  const wish = useWishlist(game)
   const ds = useGameData(game)
 
   function chooseGame(g: GameId) {
@@ -67,20 +69,20 @@ export default function App() {
             データを読み込めませんでした（{ds.message}）。<code>npm run build-data</code> を実行したか確認してください。
           </div>
         )}
-        {ds.status === 'ready' && tab === 'mons' && <MonsView game={game} data={ds.data} api={api} sync={sync} />}
+        {ds.status === 'ready' && tab === 'mons' && <MonsView game={game} data={ds.data} api={api} sync={sync} wish={wish} onOpenDex={openDex} />}
         {ds.status === 'ready' && tab === 'battle' && (
-          <BattleView game={game} data={ds.data} api={api} enemy={enemy} setEnemy={setEnemy} onOpenDex={openDex} />
+          <BattleView game={game} data={ds.data} api={api} enemy={enemy} setEnemy={setEnemy} onOpenDex={openDex} wish={wish} />
         )}
         {ds.status === 'ready' && tab === 'boss' && (
           <BossView
             game={game} data={ds.data}
-            onUseEnemy={(e) => openBattleWith(e, false)} onUseRaid={(e) => openBattleWith(e, true)} onOpenDex={openDex}
+            onUseEnemy={(e) => openBattleWith(e, false)} onUseRaid={(e) => openBattleWith(e, true)} onOpenDex={openDex} wish={wish}
           />
         )}
         {ds.status === 'ready' && tab === 'dex' && (
           <DexView
             key={dexOpen?.slug ?? ''} game={game} data={ds.data} owned={Object.values(api.save.mons)}
-            initialSlug={dexOpen?.slug}
+            wish={wish} initialSlug={dexOpen?.slug}
             onExit={dexOpen ? () => { setTab(dexOpen.from); setDexOpen(null) } : undefined}
           />
         )}

@@ -5,6 +5,7 @@ import type { BattleOptions, Enemy, Outcome } from '../battle'
 import { describeKo } from '../calc'
 import { GAMES } from '../data'
 import type { SaveApi } from '../storage'
+import type { WishApi } from '../wishlist'
 import type { GameData, GameId } from '../types'
 import { TypeChip } from './Chips'
 import { MovePicker } from './MovePicker'
@@ -20,6 +21,7 @@ interface Props {
   enemy: Enemy | null
   setEnemy: (e: Enemy | null) => void
   onOpenDex: (slug: string) => void
+  wish: WishApi
 }
 
 const SPEED_LABEL = { faster: '先手', slower: '後手', unclear: '同程度' } as const
@@ -41,7 +43,7 @@ function loadSaved(): Saved {
   }
 }
 
-export function BattleView({ game, data, api, enemy, setEnemy, onOpenDex }: Props) {
+export function BattleView({ game, data, api, enemy, setEnemy, onOpenDex, wish }: Props) {
   const [picking, setPicking] = useState<null | { kind: 'enemy' } | { kind: 'move'; slot: number }>(null)
   const [opts, setOpts] = useState<Saved>(loadSaved)
   useEffect(() => {
@@ -196,7 +198,7 @@ export function BattleView({ game, data, api, enemy, setEnemy, onOpenDex }: Prop
         <RaidPanel data={data} boss={{ slug: enemy.slug, tera: enemy.tera, ability: enemy.ability }} pool={pool} />
       )}
 
-      {raid && <RaidBuilds data={data} owned={Object.values(save.mons)} onOpenDex={onOpenDex} />}
+      {raid && <RaidBuilds data={data} owned={Object.values(save.mons)} onOpenDex={onOpenDex} wish={wish} />}
 
       {!raid && <><h2>計算の条件</h2>
       <div className="card opts">
