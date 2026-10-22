@@ -22,10 +22,11 @@ interface Props {
   wish: WishApi
 }
 
-type Sub = 'ai' | 'dlc' | 'legend' | 'raid'
+type Sub = 'ai' | 'dlc' | 'tour' | 'legend' | 'raid'
 const SUBS: { id: Sub; label: string }[] = [
   { id: 'ai', label: '博士AI' },
   { id: 'dlc', label: 'DLCトレーナー' },
+  { id: 'tour', label: '学校最強大会' },
   { id: 'legend', label: '準伝説・伝説' },
   { id: 'raid', label: 'イベントレイド' },
 ]
@@ -69,8 +70,15 @@ export function BossView({ game, data, onUseEnemy, onUseRaid, onOpenDex, wish }:
       {sub === 'dlc' && boss.status === 'ready' && (
         <Battles
           data={data} file={boss.data} onUseEnemy={onUseEnemy} onOpenDex={onOpenDex}
-          filter={(b) => !(b.name.startsWith('AI ') || b.name === 'Paradise Protection Protocol')}
+          filter={(b) => !(b.name.startsWith('AI ') || b.name === 'Paradise Protection Protocol') && b.group !== 'tournament'}
           intro="碧の仮面・藍の円盤のトレーナー戦（BBリーグ四天王、スグリ、ゼイユ、校長）。レベルが2つあるものは、初回と再戦で変わります。"
+        />
+      )}
+      {sub === 'tour' && boss.status === 'ready' && (
+        <Battles
+          data={data} file={boss.data} onUseEnemy={onUseEnemy} onOpenDex={onOpenDex}
+          filter={(b) => b.group === 'tournament'}
+          intro="メサジーナの学校最強大会（ストーリークリア後）。1〜3戦目はペパー、ボタン、先生たちのうちから、4戦目はチャンピオン・オモダカ・ハッサク・クラベルから出ます。初回は、ペパー、ジニア、キハダ、オモダカの順です。最初のポケモンの選択やテラパゴス・モモワロウの捕獲で、手持ちが変わります。"
         />
       )}
       {sub === 'raid' && boss.status === 'ready' && <Raids data={data} file={boss.data} onUseRaid={onUseRaid} />}

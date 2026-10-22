@@ -53,7 +53,7 @@ LOCATION_JA.setdefault("Blueberry Academy", "ブルーベリー学園")
 
 def jname(page: str) -> str:
     m = re.search(r"\|\s*jname\s*=\s*([^\n|]*)", fetch(page))
-    return m.group(1).strip() if m else ""
+    return re.sub(r"<[^>]+>", "", m.group(1)).strip() if m else ""
 
 
 def fetch(page: str) -> str:
@@ -87,6 +87,7 @@ def clean_level(v: str) -> str:
 
 def resolve_pokemon(name: str, ndex: str, form: str, ctx: str) -> str | None:
     if form:
+        form = form.strip("- ")
         key = slugify(name) + "-" + slugify(form.replace("form", "").replace("Form", ""))
         for s in (key, slugify(name) + "-" + slugify(form)):
             if s in poke_by_slug:
@@ -190,6 +191,63 @@ for page, want, *ja in TRAINER_PAGES:
     for b in parse_parties(page, want, ja[0] if ja else None):
         b["page"] = page
         battles.append(b)
+
+# ---- 学校最強大会（メサジーナの大会。ストーリークリア後） ----
+LABEL_JA.update({
+    "Before completing The Indigo Disk": "藍の円盤クリア前",
+    "Between The Indigo Disk and Mochi Mayhem": "藍の円盤クリア後",
+    "After Mochi Mayhem": "モモワロウ編クリア後",
+})
+TOURNAMENT_CLASS_JA = {"Champion": "チャンピオン", "Top Champion": "トップチャンピオン", "Director": "校長", "Pokémon Trainer": ""}
+POKE_JA = {p["slug"]: p["name"] for p in pokemon}
+
+
+def condition_ja(pre: str) -> str:
+    """「If the player chose X and has caught Y:」を日本語にする。条件が無ければ空"""
+    m = re.search(r"If the \{\{player\}\}(.*?):", pre)
+    if not m:
+        return ""
+    names = re.findall(r"\{\{p\|([^}|]+)\}\}", m.group(1))
+    ja = [POKE_JA.get(slugify(n), n) for n in names]
+    txt = m.group(1)
+    parts = []
+    if "chose" in txt and ja:
+        parts.append(f"最初のポケモンに{ja[0]}を選んだ場合")
+    if "has caught" in txt and ja:
+        parts.append(f"{ja[-1]}を捕まえている場合")
+    return " ・ ".join(parts)
+
+
+tour_text = fetch("Academy_Ace_Tournament")
+tour_text = tour_text[tour_text.find("==List of Trainers=="):]
+tour_text = tour_text[:tour_text.find("==Trivia==")]
+name_ja_cache: dict[str, str] = {}
+tournament = []
+for m in re.finditer(r"\{\{Party\s*\n(.*?)\n\}\}", tour_text, re.S):
+    hdr = m.group(1)
+    end = tour_text.find("{{Party/end}}", m.end())
+    body = tour_text[m.end():end]
+    name = re.sub(r"\{\{color2\|\w+\|([^}]*)\}\}", r"\1", field(hdr, "name"))
+    prev = tour_text[:m.start()]
+    # 直前の「見出し/条件文」を拾う（前のパーティの終わりより後ろだけ）
+    cut = prev.rfind("{{Party/end}}")
+    pre = prev[cut + 13:] if cut >= 0 else prev
+    cond = condition_ja(pre)
+    # 同じ人が2つ目以降のパーティ名で「{{color2|...}}」が付かない版は、同じ内容の別表記なので条件で区別する
+    if name not in name_ja_cache:
+        name_ja_cache[name] = jname(name)
+    cls = field(hdr, "class") or field(hdr, "class2")
+    blocks = re.findall(r"\{\{Pokémon\s*\n(.*?)\n\}\}", body, re.S)
+    team = [x for x in (parse_member(b, f"tournament:{name}") for b in blocks) if x]
+    if len(team) != len(blocks):
+        unresolved.append(f"tournament {name}: {len(blocks) - len(team)} members unresolved")
+    tournament.append({
+        "name": name, "nameJa": name_ja_cache[name],
+        "classJa": TOURNAMENT_CLASS_JA.get(cls, "先生" if "Instructor" in cls else ""),
+        "locationJa": LOCATION_JA.get("Mesagoza", "メサジーナ"), "game": "SV",
+        "headingJa": cond, "party": team, "group": "tournament",
+    })
+battles.extend(tournament)
 
 # ---- 7★イベントレイド ----
 raid_text = fetch("Tera_Raid_Battle")
@@ -295,7 +353,7 @@ out = {"generatedAt": __import__("datetime").datetime.now(__import__("datetime")
 (DATA / "bosses.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 print(f"battles: {len(battles)}, raids: {len(raids)}, wild: {len(wild)}")
 for b in battles:
-    print(f"  {b['page']}: {b['name']} | {b['class']} | {b['location']} | {b['game']} | {b['heading']} | n={b['n']} resolved={len(b['party'])}")
+    print(f"  {b.get('page', b.get('group'))}: {b['name']} | {b.get('class', '')} | {b.get('location', '')} | {b['game']} | {b.get('heading', '')} | n={b.get('n', len(b['party']))} resolved={len(b['party'])}")
 if unresolved:
     print("UNRESOLVED:")
     for u in sorted(set(unresolved)):
