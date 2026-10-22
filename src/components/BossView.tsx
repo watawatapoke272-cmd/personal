@@ -22,9 +22,10 @@ interface Props {
   wish: WishApi
 }
 
-type Sub = 'ai' | 'dlc' | 'tour' | 'legend' | 'raid'
+type Sub = 'ai' | 'gym' | 'dlc' | 'tour' | 'legend' | 'raid'
 const SUBS: { id: Sub; label: string }[] = [
   { id: 'ai', label: '博士AI' },
+  { id: 'gym', label: 'ジム再戦' },
   { id: 'dlc', label: 'DLCトレーナー' },
   { id: 'tour', label: '学校最強大会' },
   { id: 'legend', label: '準伝説・伝説' },
@@ -70,8 +71,15 @@ export function BossView({ game, data, onUseEnemy, onUseRaid, onOpenDex, wish }:
       {sub === 'dlc' && boss.status === 'ready' && (
         <Battles
           data={data} file={boss.data} onUseEnemy={onUseEnemy} onOpenDex={onOpenDex}
-          filter={(b) => !(b.name.startsWith('AI ') || b.name === 'Paradise Protection Protocol') && b.group !== 'tournament'}
+          filter={(b) => !(b.name.startsWith('AI ') || b.name === 'Paradise Protection Protocol') && !b.group}
           intro="碧の仮面・藍の円盤のトレーナー戦（BBリーグ四天王、スグリ、ゼイユ、校長）。レベルが2つあるものは、初回と再戦で変わります。"
+        />
+      )}
+      {sub === 'gym' && boss.status === 'ready' && (
+        <Battles
+          data={data} file={boss.data} onUseEnemy={onUseEnemy} onOpenDex={onOpenDex}
+          filter={(b) => b.group === 'gym2'}
+          intro="パルデアのジムリーダーとの2回目の戦い（チャンピオンになった後の再戦）。1回目の戦いは載せていません。"
         />
       )}
       {sub === 'tour' && boss.status === 'ready' && (

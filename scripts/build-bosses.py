@@ -36,14 +36,14 @@ unresolved: list[str] = []
 HEADING_JA = {
     "First battle": "初戦", "Second battle": "2戦目", "Subsequent battles": "再戦",
     "Fourth battle": "第4戦", "Fifth battle": "第5戦", "Sixth battle": "第6戦", "Seventh battle": "第7戦",
-    "Third battle": "第3戦", "First Multi Battle partner": "マルチバトル（1回目の相棒）",
+    "Rematch": "再戦（2回目）", "Third battle": "第3戦", "First Multi Battle partner": "マルチバトル（1回目の相棒）",
     "Second Multi Battle partner": "マルチバトル（2回目の相棒）", "Area Zero Multi Battle partner": "マルチバトル（相棒）",
     "League Club Room": "リーグ部の部室（再戦）", "Secret boss": "隠しボス", "Pokémon": "",
     "Before completing The Way Home": "「ホーム」クリア前", "After completing The Way Home": "「ホーム」クリア後",
 }
 CLASS_JA = {
     "of the BB League Elite Four": "BBリーグ四天王", "BB League Champion": "BBリーグ チャンピオン",
-    "Blueberry Academy Director": "ブルーベリー学園 校長", "Pokémon Trainer": "",
+    "Blueberry Academy Director": "ブルーベリー学園 校長", "Gym Leader": "ジムリーダー", "Pokémon Trainer": "",
 }
 LOCATION_JA_FILE = ROOT / "data-sources" / "bulbapedia-locations-ja.json"
 LOCATION_JA = json.loads(LOCATION_JA_FILE.read_text(encoding="utf-8")) if LOCATION_JA_FILE.exists() else {}
@@ -186,10 +186,16 @@ TRAINER_PAGES = [
     ("Carmine", lambda i: i["n"] >= 5 or "Underdepths" in i["location"]),
     ("Blueberry_Academy", lambda i: "Director" in i["class"], "Cyrano"),
 ]
+# 2回目のジム戦（チャンピオンになった後の再戦）。1回目と、ブルーベリー学園での3回目は入れない
+GYM_PAGES = ["Katy", "Brassius", "Iono", "Kofu", "Larry", "Ryme", "Tulip", "Grusha"]
+for g in GYM_PAGES:
+    TRAINER_PAGES.append((g, lambda i: i["location"].endswith("Gym") and i["heading"].endswith("Rematch")))
 battles = []
 for page, want, *ja in TRAINER_PAGES:
     for b in parse_parties(page, want, ja[0] if ja else None):
         b["page"] = page
+        if page in GYM_PAGES:
+            b["group"] = "gym2"
         battles.append(b)
 
 # ---- 学校最強大会（メサジーナの大会。ストーリークリア後） ----

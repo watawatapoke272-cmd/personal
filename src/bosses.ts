@@ -21,8 +21,8 @@ export interface BossBattle {
   /** V=バイオレット, Sc=スカーレット, SV=共通 */
   game: 'V' | 'Sc' | 'SV'
   headingJa: string
-  /** 'tournament' = 学校最強大会 */
-  group?: 'tournament'
+  /** 'tournament' = 学校最強大会、'gym2' = 2回目のジム戦 */
+  group?: 'tournament' | 'gym2'
   party: BossMember[]
 }
 
