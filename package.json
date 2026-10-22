@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "build-data": "node scripts/build-data.mjs",
+    "build-bosses": "python scripts/build-bosses.py",
     "build-machine-sources": "node scripts/build-machine-sources.mjs"
   },
   "dependencies": {

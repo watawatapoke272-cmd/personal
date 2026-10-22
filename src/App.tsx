@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { Enemy } from './battle'
+import { setRaidMode } from './battleMode'
 import { BattleView } from './components/BattleView'
+import { BossView } from './components/BossView'
 import { DexView } from './components/DexView'
 import { MonsView } from './components/MonsView'
 import { SyncBadge } from './components/SyncPanel'
@@ -9,11 +11,12 @@ import { loadGameChoice, saveGameChoice, useSave } from './storage'
 import { useSync } from './sync'
 import type { GameId } from './types'
 
-type Tab = 'mons' | 'dex' | 'battle'
+type Tab = 'mons' | 'dex' | 'battle' | 'boss'
 const TABS: { id: Tab; label: string }[] = [
   { id: 'mons', label: '手持ち' },
   { id: 'dex', label: '図鑑・技・TM' },
   { id: 'battle', label: 'バトル支援' },
+  { id: 'boss', label: 'ボス' },
 ]
 
 export default function App() {
@@ -28,6 +31,13 @@ export default function App() {
     setGame(g)
     setEnemy(null) // ソフトが変わると別のポケモン一覧になるため、相手の入力は消す
     saveGameChoice(g)
+  }
+
+  /** ボス図鑑から、バトル支援（通常／テラレイド）に相手を渡して画面を切り替える */
+  function useAsEnemy(e: Enemy, raid: boolean) {
+    setRaidMode(raid)
+    setEnemy(e)
+    setTab('battle')
   }
 
   return (
@@ -53,6 +63,12 @@ export default function App() {
         {ds.status === 'ready' && tab === 'mons' && <MonsView game={game} data={ds.data} api={api} sync={sync} />}
         {ds.status === 'ready' && tab === 'battle' && (
           <BattleView game={game} data={ds.data} api={api} enemy={enemy} setEnemy={setEnemy} />
+        )}
+        {ds.status === 'ready' && tab === 'boss' && (
+          <BossView
+            game={game} data={ds.data}
+            onUseEnemy={(e) => useAsEnemy(e, false)} onUseRaid={(e) => useAsEnemy(e, true)}
+          />
         )}
         {ds.status === 'ready' && tab === 'dex' && (
           <DexView game={game} data={ds.data} owned={Object.values(api.save.mons)} />

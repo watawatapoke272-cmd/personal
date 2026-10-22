@@ -6,6 +6,8 @@
 - 手持ち管理（パーティ6匹／ボックス、特性・持ち物・テラスタイプ・性格・努力値・個体値・技）
 - 図鑑・技・技マシン参照（SVは作成素材、剣盾は入手場所つき）
 - バトル提案（敵を選ぶと、選出・攻撃・受け・素早さ・注意点を提示）
+- ボス図鑑（博士AI・BBリーグ・スグリ等のトレーナー戦、準伝説の基本データ、7★イベントレイドのボスをテラレイド支援に渡せる）
+- パーティの弱点・耐性表
 - 端末間の同期（Googleスプレッドシート + GAS。`gas/README.md`）
 
 ## 開発
@@ -16,6 +18,7 @@ npm run dev            # 開発サーバー (http://localhost:5173)
 npm run build          # 公開用ファイルを dist/ に生成
 npm run preview        # build 後の確認
 npm run build-data     # PokeAPI からデータを取り直す（public/data を更新。初回は数分）
+npm run build-bosses           # ボス戦・7★レイドのデータを Bulbapedia から取り直す（要 Python）
 npm run build-machine-sources   # 技マシンの入手情報を data-sources/ から作り直す
 ```
 
@@ -25,6 +28,7 @@ npm run build-machine-sources   # 技マシンの入手情報を data-sources/ �
 ## データの出典
 
 - ポケモン・技・特性・技マシン番号・覚える技: [PokeAPI](https://pokeapi.co/)
+- ボス戦の手持ち・7★イベントレイドのテラスタイプ: [Bulbapedia](https://bulbapedia.bulbagarden.net/)（CC BY-NC-SA 2.5）
 - 技マシンの拾える場所（SV）・ワット価格（剣盾）・地名の日本語名: [Bulbapedia](https://bulbapedia.bulbagarden.net/)（CC BY-NC-SA 2.5）
 - 技マシンの作成素材・入手方法の日本語表記: ゲームエイト（個人利用の範囲で参照）
 

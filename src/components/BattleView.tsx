@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { advise, effLabel, monName } from '../battle'
+import { OPT_KEY } from '../battleMode'
 import type { BattleOptions, Enemy, Outcome } from '../battle'
 import { describeKo } from '../calc'
 import { GAMES } from '../data'
@@ -24,7 +25,6 @@ const SPEED_LABEL = { faster: '先手', slower: '後手', unclear: '同程度' }
 const OUTCOME_LABEL: Record<Outcome, string> = { win: '有利', close: '互角', lose: '不利', none: '―' }
 
 type Saved = { raid: boolean; strong: boolean; weather: 'sun' | 'rain' | null; myTera: boolean; withBox: boolean }
-const OPT_KEY = 'pokemon-app:battle-options'
 function loadSaved(): Saved {
   try {
     const raw = JSON.parse(localStorage.getItem(OPT_KEY) ?? 'null') as Partial<Saved> | null

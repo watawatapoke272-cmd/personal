@@ -5,6 +5,7 @@ import type { SaveApi } from '../storage'
 import type { GameData, GameId } from '../types'
 import { MonCard, monTitle } from './MonCard'
 import { MonEditor } from './MonEditor'
+import { PartyWeakness } from './PartyWeakness'
 import { SyncPanel } from './SyncPanel'
 import type { SyncApi } from '../sync'
 
@@ -80,6 +81,8 @@ export function MonsView({ game, data, api, sync }: Props) {
           </button>
         )}
       </div>
+
+      <PartyWeakness data={data} game={game} party={party} />
 
       <h2>ボックス <small>{boxTotal}匹</small></h2>
       <div className="row">

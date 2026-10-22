@@ -252,3 +252,19 @@ h3.sub { margin: 14px 0 6px; color: var(--muted); }
 .build-spec { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 6px 0; font-size: 0.9rem; }
 .build-spec dt { color: var(--muted); }
 .build-spec dd { margin: 0; }
+
+/* パーティの弱点表 */
+.wk-scroll { overflow-x: auto; margin: 8px 0; }
+.wk { border-collapse: collapse; font-size: 0.85rem; }
+.wk th, .wk td { padding: 3px 6px; text-align: center; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.wk td.weak { background: #b91c1c; color: #fff; font-weight: 700; }
+.wk td.res { background: #166534; color: #fff; }
+.wk td.imm { background: #374151; color: #fff; }
+.wk tr.hole > th:first-child { box-shadow: inset 3px 0 0 #b91c1c; }
+
+/* ボス図鑑 */
+.boss summary { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; cursor: pointer; }
+.boss-party { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.boss-mon { display: flex; gap: 8px; align-items: flex-start; }
+.boss-body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.boss-move { display: inline-block; margin: 0 6px 0 0; }
