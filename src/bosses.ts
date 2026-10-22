@@ -32,12 +32,26 @@ export interface RaidPreset {
   end: string | null
 }
 
+/** 野生の固定戦（4災厄・ともっこ・オーガポン・パラドクス準伝説など） */
+export interface WildBoss {
+  slug: string
+  level: string
+  /** テラスタイプ。2つあるときは「どちらか」。分からなければ空 */
+  tera: string[]
+  ability: string | null
+  moves: number[]
+  locationJa: string
+  /** 「ホーム」クリア前後など */
+  note: string
+}
+
 export interface BossesFile {
   generatedAt: string
   source: string
   extraNames: Record<string, string>
   battles: BossBattle[]
   raids: RaidPreset[]
+  wild: WildBoss[]
 }
 
 export type BossState =

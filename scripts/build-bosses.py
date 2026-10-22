@@ -30,7 +30,7 @@ LABEL_JA = {
     "First battle": "初戦", "League Club Room": "クラブルーム（再戦）",
 }
 # アプリのデータに無い特性・持ち物の日本語名（画面表示用）
-EXTRA_NAMES = {"tera-shell": "テラスシェル", "kee-berry": "アッキのみ"}
+EXTRA_NAMES = {"tera-shell": "テラスシェル", "kee-berry": "アッキのみ", "tera-shift": "テラスチェンジ"}
 unresolved: list[str] = []
 
 HEADING_JA = {
@@ -222,10 +222,78 @@ for row in sec.split("\n|-")[1:]:
         "start": dates[0].group(1) if dates[0] else None, "end": dates[1].group(1) if dates[1] else None,
     })
 
+# ---- 準伝説・伝説（野生の固定戦） ----
+LEGEND_NAMES = {
+    "Wo-Chien", "Chien-Pao", "Ting-Lu", "Chi-Yu", "Okidogi", "Munkidori", "Fezandipiti", "Ogerpon", "Pecharunt",
+    "Terapagos", "Gouging Fire", "Raging Bolt", "Iron Boulder", "Iron Crown", "Koraidon", "Miraidon",
+}
+# (ページ, 表示する場所の日本語名)。場所名は Bulbapedia の日本語名（japanese_name）で補う
+WILD_PAGES = [
+    ("Grasswither_Shrine", None), ("Icerend_Shrine", None), ("Groundblight_Shrine", None), ("Firescourge_Shrine", None),
+    ("Paradise_Barrens", "Paradise Barrens"), ("Wistful_Fields", "Wistful Fields"), ("Dreaded_Den", "Dreaded Den"),
+    ("Oni_Mountain", "Oni Mountain"), ("Loyalty_Plaza", "Loyalty Plaza"), ("Area_Zero_Underdepths", "Area Zero Underdepths"),
+    ("Area_Zero", "Area Zero"),
+]
+OGERPON_BY_TERA = {"fire": "ogerpon-hearthflame-mask", "water": "ogerpon-wellspring-mask", "rock": "ogerpon-cornerstone-mask", "grass": "ogerpon"}
+
+
+def kv(blk: str) -> dict:
+    return {k: v.strip() for k, v in re.findall(r"\|\s*(\w+)\s*=\s*([^|\n}]*)", blk)}
+
+
+wild = []
+seen = set()
+for page, loc in WILD_PAGES:
+    w = fetch(page)
+    loc_ja = LOCATION_JA.get(loc, "") if loc else ""
+    if loc is None:
+        m = re.search(r"japanese_name=\{\{tt\|([^|}]*)\|", w)
+        loc_ja = m.group(1) if m else page.replace("_", " ")
+    for m in re.finditer(r"\{\{Pokémon\s*\n?\|(.*?)\}\}", w, re.S):
+        d = kv(m.group(0))
+        name = d.get("pokemon", "")
+        if name not in LEGEND_NAMES or not d.get("move1"):
+            continue
+        ctx = w[max(0, m.start() - 400):m.start()]
+        # 「ホーム」クリア前後で相手が変わる戦い（ドレッデンの洞窟のオーガポン等）
+        note = ""
+        notes = re.findall(r";\s*(Before|After) completing", ctx)
+        if notes:
+            note = "「ホーム」クリア前" if notes[-1] == "Before" else "「ホーム」クリア後"
+        teras = [slugify(d[k]) for k in ("tera", "tera2") if d.get(k)]
+        slug = OGERPON_BY_TERA.get(teras[0]) if name == "Ogerpon" and teras else None
+        slug = slug or resolve_pokemon(name, d.get("ndex", ""), "", f"wild:{page}")
+        if not slug:
+            continue
+        ab = slugify(d.get("ability", ""))
+        mv = []
+        for i in range(1, 5):
+            mname = d.get(f"move{i}")
+            if not mname:
+                continue
+            mid = move_by_slug.get(slugify(mname))
+            if mid is None:
+                unresolved.append(f"move {mname} ({name}) in wild:{page}")
+            else:
+                mv.append(mid)
+        key = (slug, d.get("level"), tuple(teras), tuple(mv), note)
+        if key in seen:
+            continue
+        seen.add(key)
+        # テラパゴスはスグリの戦闘ブロックと重なるので、技が4つ揃っている方を使う
+        if name == "Terapagos" and len(mv) < 4:
+            continue
+        wild.append({
+            "slug": slug, "level": d.get("level", ""), "tera": teras, "ability": ab if (ab in abilities or ab in EXTRA_NAMES) else None,
+            "moves": mv, "location": loc or page, "locationJa": loc_ja, "note": note,
+        })
+        if ab and ab not in abilities and ab not in EXTRA_NAMES:
+            unresolved.append(f"ability {ab} ({name}) in wild:{page}")
+
 out = {"generatedAt": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(timespec="seconds"),
-       "source": "Bulbapedia", "extraNames": EXTRA_NAMES, "battles": battles, "raids": raids}
+       "source": "Bulbapedia", "extraNames": EXTRA_NAMES, "battles": battles, "raids": raids, "wild": wild}
 (DATA / "bosses.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-print(f"battles: {len(battles)}, raids: {len(raids)}")
+print(f"battles: {len(battles)}, raids: {len(raids)}, wild: {len(wild)}")
 for b in battles:
     print(f"  {b['page']}: {b['name']} | {b['class']} | {b['location']} | {b['game']} | {b['heading']} | n={b['n']} resolved={len(b['party'])}")
 if unresolved:

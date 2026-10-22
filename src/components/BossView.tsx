@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Enemy } from '../battle'
 import { firstLevel, useBosses } from '../bosses'
-import type { BossBattle, BossMember, BossesFile, RaidPreset } from '../bosses'
+import type { BossBattle, BossMember, BossesFile, RaidPreset, WildBoss } from '../bosses'
 import { effectiveness } from '../typeEff'
 import { norm } from '../text'
 import type { GameData, GameId, PokemonData } from '../types'
@@ -49,7 +49,7 @@ export function BossView({ game, data, onUseEnemy, onUseRaid }: Props) {
         ))}
       </div>
 
-      {sub === 'legend' && <Legends data={data} />}
+      {sub === 'legend' && <Legends data={data} file={boss.status === 'ready' ? boss.data : null} onUseEnemy={onUseEnemy} />}
       {sub !== 'legend' && boss.status === 'loading' && <p className="muted">読み込み中…</p>}
       {sub !== 'legend' && boss.status === 'error' && (
         <div className="banner warn">ボスデータを読み込めませんでした（{boss.message}）。<code>npm run build-bosses</code> で作成できます。</div>
@@ -135,18 +135,19 @@ function Member({ m, data, file, onUseEnemy }: {
 
 // ---- 準伝説・伝説 ----
 
-function Legends({ data }: { data: GameData }) {
+function Legends({ data, file, onUseEnemy }: { data: GameData; file: BossesFile | null; onUseEnemy: (e: Enemy) => void }) {
   return (
     <>
       <p className="muted">
-        野生の固定戦などで戦う相手の基本データ（種族値・特性・弱点）。戦闘時のレベル・技・テラスタイプは未収録です。
+        野生の固定戦などで戦う相手。基本データ（種族値・特性・弱点）と、分かっているものは戦闘時のレベル・技・テラスタイプも載せています。
+        ウネルミナモ・テツノイサハは戦闘データが見つからなかったので、基本データのみです。
       </p>
       {LEGEND_GROUPS.map((g) => (
         <section key={g.title} className="card advice">
           <h3>{g.title}</h3>
           {g.slugs.map((s) => {
             const p = data.pokemonBySlug.get(s)
-            return p ? <Legend key={s} p={p} data={data} /> : null
+            return p ? <Legend key={s} p={p} data={data} file={file} onUseEnemy={onUseEnemy} /> : null
           })}
         </section>
       ))}
@@ -156,7 +157,7 @@ function Legends({ data }: { data: GameData }) {
 
 const STAT_LABEL = { hp: 'H', atk: 'A', def: 'B', spa: 'C', spd: 'D', spe: 'S' } as const
 
-function Legend({ p, data }: { p: PokemonData; data: GameData }) {
+function Legend({ p, data, file, onUseEnemy }: { p: PokemonData; data: GameData; file: BossesFile | null; onUseEnemy: (e: Enemy) => void }) {
   const weak = useMemo(
     () => data.types.types
       .filter((t) => t.slug !== 'stellar')
@@ -165,6 +166,9 @@ function Legend({ p, data }: { p: PokemonData; data: GameData }) {
     [data, p],
   )
   const total = Object.values(p.stats).reduce((a, b) => a + b, 0)
+  // オーガポンは仮面ごとに別のslugなので、同じ「オーガポン」としてまとめて出す
+  const family = p.slug.startsWith('ogerpon') ? (s: string) => s.startsWith('ogerpon') : (s: string) => s === p.slug
+  const encounters = (file?.wild ?? []).filter((w) => family(w.slug))
   return (
     <details className="build">
       <summary>
@@ -179,7 +183,42 @@ function Legend({ p, data }: { p: PokemonData; data: GameData }) {
       <p className="raid-sub">
         弱点: {weak.map((x) => <span key={x.t.slug}><TypeChip data={data} slug={x.t.slug} />{x.e >= 4 ? '×4' : ''} </span>)}
       </p>
+      {encounters.map((w, i) => <Encounter key={i} w={w} data={data} file={file} onUseEnemy={onUseEnemy} />)}
+      {encounters.length === 0 && (
+        <p className="raid-sub">戦闘データ（レベル・技）は見つかりませんでした。</p>
+      )}
+      <button className="ghost small" onClick={() => onUseEnemy({ slug: p.slug, level: null, ability: null, tera: null, moves: [null, null, null, null] })}>
+        バトル支援でこの相手と比べる
+      </button>
     </details>
+  )
+}
+
+function Encounter({ w, data, file, onUseEnemy }: { w: WildBoss; data: GameData; file: BossesFile | null; onUseEnemy: (e: Enemy) => void }) {
+  const p = data.pokemonBySlug.get(w.slug)
+  if (!p) return null
+  const abName = w.ability ? data.abilities.get(w.ability)?.name ?? file?.extraNames[w.ability] ?? w.ability : null
+  const moves = w.moves.map((id) => data.moves.get(id)).filter((x) => !!x)
+  return (
+    <div className="encounter">
+      <div>
+        <strong>{w.locationJa}</strong>{w.note && <small> {w.note}</small>} <small>Lv.{w.level}</small>
+        {p.slug.startsWith('ogerpon') && <small> {p.name}</small>}
+        {w.tera.length > 0 && (
+          <span className="tera">
+            テラス: {w.tera.map((t, i) => <span key={t}>{i > 0 && ' または '}<TypeChip data={data} slug={t} /></span>)}
+          </span>
+        )}
+      </div>
+      <div className="raid-sub">{abName && `特性: ${abName}`}</div>
+      <div className="raid-sub">{moves.map((mv) => <span key={mv.id} className="boss-move">{mv.name}</span>)}</div>
+      <button
+        className="ghost small"
+        onClick={() => onUseEnemy({ slug: w.slug, level: firstLevel(w.level), ability: w.ability, tera: null, moves: [...w.moves, null, null, null, null].slice(0, 4) })}
+      >
+        この戦闘の設定でバトル支援へ
+      </button>
+    </div>
   )
 }
 
