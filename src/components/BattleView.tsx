@@ -8,6 +8,7 @@ import type { GameData, GameId } from '../types'
 import { TypeChip } from './Chips'
 import { MovePicker } from './MovePicker'
 import { PokemonPicker } from './PokemonPicker'
+import { RaidBuilds } from './RaidBuilds'
 import { RaidPanel } from './RaidPanel'
 import { Sprite } from './Sprite'
 
@@ -193,6 +194,8 @@ export function BattleView({ game, data, api, enemy, setEnemy }: Props) {
       {raid && enemy && enemy.tera && (
         <RaidPanel data={data} boss={{ slug: enemy.slug, tera: enemy.tera, ability: enemy.ability }} pool={pool} />
       )}
+
+      {raid && <RaidBuilds data={data} owned={Object.values(save.mons)} />}
 
       {!raid && <><h2>計算の条件</h2>
       <div className="card opts">

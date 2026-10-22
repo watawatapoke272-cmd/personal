@@ -247,3 +247,8 @@ h3.sub { margin: 14px 0 6px; color: var(--muted); }
 .raid-body { min-width: 0; }
 .raid-sub { font-size: 0.85rem; color: var(--muted); }
 .pick-list .pick-name { flex: 1; }
+.builds { display: flex; flex-direction: column; gap: 6px; }
+.build summary { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.build-spec { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 6px 0; font-size: 0.9rem; }
+.build-spec dt { color: var(--muted); }
+.build-spec dd { margin: 0; }
