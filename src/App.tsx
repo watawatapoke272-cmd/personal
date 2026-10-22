@@ -34,7 +34,7 @@ export default function App() {
   }
 
   /** ボス図鑑から、バトル支援（通常／テラレイド）に相手を渡して画面を切り替える */
-  function useAsEnemy(e: Enemy, raid: boolean) {
+  function openBattleWith(e: Enemy, raid: boolean) {
     setRaidMode(raid)
     setEnemy(e)
     setTab('battle')
@@ -67,7 +67,7 @@ export default function App() {
         {ds.status === 'ready' && tab === 'boss' && (
           <BossView
             game={game} data={ds.data}
-            onUseEnemy={(e) => useAsEnemy(e, false)} onUseRaid={(e) => useAsEnemy(e, true)}
+            onUseEnemy={(e) => openBattleWith(e, false)} onUseRaid={(e) => openBattleWith(e, true)}
           />
         )}
         {ds.status === 'ready' && tab === 'dex' && (

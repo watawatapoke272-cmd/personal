@@ -4,6 +4,7 @@ import { NATURES, STAT_KEYS, STAT_LABEL, natureLabel } from '../natures'
 import { PARTY_MAX, newMon } from '../storage'
 import type { GameData, GameId, OwnedPokemon, PokemonData, StatKey } from '../types'
 import { MoveClass, TypeChip } from './Chips'
+import { IntInput } from './IntInput'
 import { ItemPicker } from './ItemPicker'
 import { learnableMoves, MovePicker } from './MovePicker'
 import { PokemonPicker } from './PokemonPicker'
@@ -24,7 +25,6 @@ interface Props {
 
 type Sub = { kind: 'species' } | { kind: 'move'; slot: number } | { kind: 'item' } | null
 
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
 
 export function MonEditor({
   game, data, initial, initialPlace, inParty, partyCount, onSave, onDelete, onClose,
@@ -56,10 +56,8 @@ export function MonEditor({
   function patch(p: Partial<OwnedPokemon>) {
     setMon((m) => (m ? { ...m, ...p } : m))
   }
-  function setStat(kind: 'evs' | 'ivs', k: StatKey, raw: string) {
+  function setStat(kind: 'evs' | 'ivs', k: StatKey, v: number) {
     if (!mon) return
-    const max = kind === 'evs' ? 252 : 31
-    const v = raw === '' ? 0 : clamp(Math.trunc(Number(raw)) || 0, 0, max)
     patch({ [kind]: { ...mon[kind], [k]: v } })
   }
 
@@ -138,11 +136,7 @@ export function MonEditor({
         </label>
         <label>
           レベル
-          <input
-            type="number" inputMode="numeric" min={1} max={100}
-            value={mon.level}
-            onChange={(e) => patch({ level: clamp(Math.trunc(Number(e.target.value)) || 1, 1, 100) })}
-          />
+          <IntInput value={mon.level} min={1} max={100} onChange={(level) => patch({ level })} />
         </label>
         <label>
           特性
@@ -227,12 +221,10 @@ export function MonEditor({
               <tr key={k}>
                 <th>{STAT_LABEL[k]}</th>
                 <td>
-                  <input type="number" inputMode="numeric" min={0} max={252} value={mon.evs[k]}
-                    onFocus={(e) => e.target.select()} onChange={(e) => setStat('evs', k, e.target.value)} />
+                  <IntInput value={mon.evs[k]} min={0} max={252} onChange={(v) => setStat('evs', k, v)} />
                 </td>
                 <td>
-                  <input type="number" inputMode="numeric" min={0} max={31} value={mon.ivs[k]}
-                    onFocus={(e) => e.target.select()} onChange={(e) => setStat('ivs', k, e.target.value)} />
+                  <IntInput value={mon.ivs[k]} min={0} max={31} onChange={(v) => setStat('ivs', k, v)} />
                 </td>
               </tr>
             ))}
