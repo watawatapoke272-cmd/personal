@@ -15,6 +15,8 @@ interface Props {
   onUseEnemy: (e: Enemy) => void
   /** レイドボスとして「バトル支援（テラレイド）」に渡す */
   onUseRaid: (e: Enemy) => void
+  /** 図鑑のポケモン詳細を開く */
+  onOpenDex: (slug: string) => void
 }
 
 type Sub = 'ai' | 'dlc' | 'legend' | 'raid'
@@ -35,7 +37,7 @@ const LEGEND_GROUPS: { title: string; slugs: string[] }[] = [
 
 const GAME_TAG: Record<BossBattle['game'], string> = { V: 'バイオレット', Sc: 'スカーレット', SV: '' }
 
-export function BossView({ game, data, onUseEnemy, onUseRaid }: Props) {
+export function BossView({ game, data, onUseEnemy, onUseRaid, onOpenDex }: Props) {
   const [sub, setSub] = useState<Sub>('ai')
   const boss = useBosses()
 
@@ -49,21 +51,21 @@ export function BossView({ game, data, onUseEnemy, onUseRaid }: Props) {
         ))}
       </div>
 
-      {sub === 'legend' && <Legends data={data} file={boss.status === 'ready' ? boss.data : null} onUseEnemy={onUseEnemy} />}
+      {sub === 'legend' && <Legends data={data} file={boss.status === 'ready' ? boss.data : null} onUseEnemy={onUseEnemy} onOpenDex={onOpenDex} />}
       {sub !== 'legend' && boss.status === 'loading' && <p className="muted">読み込み中…</p>}
       {sub !== 'legend' && boss.status === 'error' && (
         <div className="banner warn">ボスデータを読み込めませんでした（{boss.message}）。<code>npm run build-bosses</code> で作成できます。</div>
       )}
       {sub === 'ai' && boss.status === 'ready' && (
         <Battles
-          data={data} file={boss.data} onUseEnemy={onUseEnemy}
+          data={data} file={boss.data} onUseEnemy={onUseEnemy} onOpenDex={onOpenDex}
           filter={(b) => b.name.startsWith('AI ') || b.name === 'Paradise Protection Protocol'}
           intro="フトゥー博士（バイオレット）／オーリム博士（スカーレット）のAI。「楽園防衛プログラム」は最後の戦いで、テラスタル後はテラバースト固定になるなど特殊ルールがあります。"
         />
       )}
       {sub === 'dlc' && boss.status === 'ready' && (
         <Battles
-          data={data} file={boss.data} onUseEnemy={onUseEnemy}
+          data={data} file={boss.data} onUseEnemy={onUseEnemy} onOpenDex={onOpenDex}
           filter={(b) => !(b.name.startsWith('AI ') || b.name === 'Paradise Protection Protocol')}
           intro="碧の仮面・藍の円盤のトレーナー戦（BBリーグ四天王、スグリ、ゼイユ、校長）。レベルが2つあるものは、初回と再戦で変わります。"
         />
@@ -75,8 +77,9 @@ export function BossView({ game, data, onUseEnemy, onUseRaid }: Props) {
 
 // ---- トレーナー戦 ----
 
-function Battles({ data, file, filter, intro, onUseEnemy }: {
+function Battles({ data, file, filter, intro, onUseEnemy, onOpenDex }: {
   data: GameData; file: BossesFile; filter: (b: BossBattle) => boolean; intro: string; onUseEnemy: (e: Enemy) => void
+  onOpenDex: (slug: string) => void
 }) {
   const list = file.battles.filter(filter)
   return (
@@ -90,7 +93,7 @@ function Battles({ data, file, filter, intro, onUseEnemy }: {
             {GAME_TAG[b.game] && <small>{GAME_TAG[b.game]}</small>}
           </summary>
           <ul className="boss-party">
-            {b.party.map((m, k) => <Member key={k} m={m} data={data} file={file} onUseEnemy={onUseEnemy} />)}
+            {b.party.map((m, k) => <Member key={k} m={m} data={data} file={file} onUseEnemy={onUseEnemy} onOpenDex={onOpenDex} />)}
           </ul>
         </details>
       ))}
@@ -99,8 +102,8 @@ function Battles({ data, file, filter, intro, onUseEnemy }: {
   )
 }
 
-function Member({ m, data, file, onUseEnemy }: {
-  m: BossMember; data: GameData; file: BossesFile; onUseEnemy: (e: Enemy) => void
+function Member({ m, data, file, onUseEnemy, onOpenDex }: {
+  m: BossMember; data: GameData; file: BossesFile; onUseEnemy: (e: Enemy) => void; onOpenDex: (slug: string) => void
 }) {
   const p = data.pokemonBySlug.get(m.slug)
   if (!p) return null
@@ -128,6 +131,7 @@ function Member({ m, data, file, onUseEnemy }: {
         >
           バトル支援でこの相手と比べる
         </button>
+        <button className="ghost small" onClick={() => onOpenDex(m.slug)}>図鑑で見る</button>
       </div>
     </li>
   )
@@ -135,7 +139,7 @@ function Member({ m, data, file, onUseEnemy }: {
 
 // ---- 準伝説・伝説 ----
 
-function Legends({ data, file, onUseEnemy }: { data: GameData; file: BossesFile | null; onUseEnemy: (e: Enemy) => void }) {
+function Legends({ data, file, onUseEnemy, onOpenDex }: { data: GameData; file: BossesFile | null; onUseEnemy: (e: Enemy) => void; onOpenDex: (slug: string) => void }) {
   return (
     <>
       <p className="muted">
@@ -147,7 +151,7 @@ function Legends({ data, file, onUseEnemy }: { data: GameData; file: BossesFile 
           <h3>{g.title}</h3>
           {g.slugs.map((s) => {
             const p = data.pokemonBySlug.get(s)
-            return p ? <Legend key={s} p={p} data={data} file={file} onUseEnemy={onUseEnemy} /> : null
+            return p ? <Legend key={s} p={p} data={data} file={file} onUseEnemy={onUseEnemy} onOpenDex={onOpenDex} /> : null
           })}
         </section>
       ))}
@@ -157,7 +161,7 @@ function Legends({ data, file, onUseEnemy }: { data: GameData; file: BossesFile 
 
 const STAT_LABEL = { hp: 'H', atk: 'A', def: 'B', spa: 'C', spd: 'D', spe: 'S' } as const
 
-function Legend({ p, data, file, onUseEnemy }: { p: PokemonData; data: GameData; file: BossesFile | null; onUseEnemy: (e: Enemy) => void }) {
+function Legend({ p, data, file, onUseEnemy, onOpenDex }: { p: PokemonData; data: GameData; file: BossesFile | null; onUseEnemy: (e: Enemy) => void; onOpenDex: (slug: string) => void }) {
   const weak = useMemo(
     () => data.types.types
       .filter((t) => t.slug !== 'stellar')
@@ -190,6 +194,7 @@ function Legend({ p, data, file, onUseEnemy }: { p: PokemonData; data: GameData;
       <button className="ghost small" onClick={() => onUseEnemy({ slug: p.slug, level: null, ability: null, tera: null, moves: [null, null, null, null] })}>
         バトル支援でこの相手と比べる
       </button>
+      <button className="ghost small" onClick={() => onOpenDex(p.slug)}>図鑑で見る（覚える技）</button>
     </details>
   )
 }

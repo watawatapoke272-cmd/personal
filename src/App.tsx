@@ -23,6 +23,8 @@ export default function App() {
   const [game, setGame] = useState<GameId>(loadGameChoice)
   const [tab, setTab] = useState<Tab>('mons')
   const [enemy, setEnemy] = useState<Enemy | null>(null)
+  /** 他の画面から図鑑のポケモン詳細を開いたとき（戻る先の画面を覚えておく） */
+  const [dexOpen, setDexOpen] = useState<{ slug: string; from: Tab } | null>(null)
   const api = useSave(game)
   const sync = useSync(game, api)
   const ds = useGameData(game)
@@ -31,6 +33,11 @@ export default function App() {
     setGame(g)
     setEnemy(null) // ソフトが変わると別のポケモン一覧になるため、相手の入力は消す
     saveGameChoice(g)
+  }
+
+  function openDex(slug: string) {
+    setDexOpen({ slug, from: tab })
+    setTab('dex')
   }
 
   /** ボス図鑑から、バトル支援（通常／テラレイド）に相手を渡して画面を切り替える */
@@ -62,22 +69,26 @@ export default function App() {
         )}
         {ds.status === 'ready' && tab === 'mons' && <MonsView game={game} data={ds.data} api={api} sync={sync} />}
         {ds.status === 'ready' && tab === 'battle' && (
-          <BattleView game={game} data={ds.data} api={api} enemy={enemy} setEnemy={setEnemy} />
+          <BattleView game={game} data={ds.data} api={api} enemy={enemy} setEnemy={setEnemy} onOpenDex={openDex} />
         )}
         {ds.status === 'ready' && tab === 'boss' && (
           <BossView
             game={game} data={ds.data}
-            onUseEnemy={(e) => openBattleWith(e, false)} onUseRaid={(e) => openBattleWith(e, true)}
+            onUseEnemy={(e) => openBattleWith(e, false)} onUseRaid={(e) => openBattleWith(e, true)} onOpenDex={openDex}
           />
         )}
         {ds.status === 'ready' && tab === 'dex' && (
-          <DexView game={game} data={ds.data} owned={Object.values(api.save.mons)} />
+          <DexView
+            key={dexOpen?.slug ?? ''} game={game} data={ds.data} owned={Object.values(api.save.mons)}
+            initialSlug={dexOpen?.slug}
+            onExit={dexOpen ? () => { setTab(dexOpen.from); setDexOpen(null) } : undefined}
+          />
         )}
       </main>
 
       <nav className="tabs">
         {TABS.map((t) => (
-          <button key={t.id} className={t.id === tab ? 'on' : ''} onClick={() => setTab(t.id)}>
+          <button key={t.id} className={t.id === tab ? 'on' : ''} onClick={() => { setDexOpen(null); setTab(t.id) }}>
             {t.label}
           </button>
         ))}

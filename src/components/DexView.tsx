@@ -12,6 +12,10 @@ interface Props {
   game: GameId
   data: GameData
   owned: OwnedPokemon[]
+  /** 他の画面から、このポケモンの詳細を開いた状態で始める */
+  initialSlug?: string
+  /** 他の画面から開いたとき、最初の詳細で「戻る」を押したときの動作 */
+  onExit?: () => void
 }
 
 type Sub = 'tm' | 'pokemon' | 'move'
@@ -21,11 +25,12 @@ const SUBS: { id: Sub; label: string }[] = [
   { id: 'move', label: '技' },
 ]
 
-export function DexView({ game, data, owned }: Props) {
-  const [sub, setSub] = useState<Sub>('tm')
-  const [stack, setStack] = useState<Overlay[]>([])
+export function DexView({ game, data, owned, initialSlug, onExit }: Props) {
+  const [sub, setSub] = useState<Sub>(initialSlug ? 'pokemon' : 'tm')
+  const [stack, setStack] = useState<Overlay[]>(initialSlug ? [{ kind: 'pokemon', slug: initialSlug }] : [])
   const open = (o: Overlay) => setStack((s) => [...s, o])
-  const back = () => setStack((s) => s.slice(0, -1))
+  // 他の画面から開いたときは、最初の1枚で「戻る」を押すと元の画面に戻る
+  const back = () => (stack.length === 1 && onExit ? onExit() : setStack((s) => s.slice(0, -1)))
   const top = stack.at(-1)
 
   return (

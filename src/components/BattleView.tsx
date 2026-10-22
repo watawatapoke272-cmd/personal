@@ -19,6 +19,7 @@ interface Props {
   api: SaveApi
   enemy: Enemy | null
   setEnemy: (e: Enemy | null) => void
+  onOpenDex: (slug: string) => void
 }
 
 const SPEED_LABEL = { faster: '先手', slower: '後手', unclear: '同程度' } as const
@@ -40,7 +41,7 @@ function loadSaved(): Saved {
   }
 }
 
-export function BattleView({ game, data, api, enemy, setEnemy }: Props) {
+export function BattleView({ game, data, api, enemy, setEnemy, onOpenDex }: Props) {
   const [picking, setPicking] = useState<null | { kind: 'enemy' } | { kind: 'move'; slot: number }>(null)
   const [opts, setOpts] = useState<Saved>(loadSaved)
   useEffect(() => {
@@ -195,7 +196,7 @@ export function BattleView({ game, data, api, enemy, setEnemy }: Props) {
         <RaidPanel data={data} boss={{ slug: enemy.slug, tera: enemy.tera, ability: enemy.ability }} pool={pool} />
       )}
 
-      {raid && <RaidBuilds data={data} owned={Object.values(save.mons)} />}
+      {raid && <RaidBuilds data={data} owned={Object.values(save.mons)} onOpenDex={onOpenDex} />}
 
       {!raid && <><h2>計算の条件</h2>
       <div className="card opts">

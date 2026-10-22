@@ -7,6 +7,7 @@ import { Sprite } from './Sprite'
 interface Props {
   data: GameData
   owned: OwnedPokemon[]
+  onOpenDex: (slug: string) => void
 }
 
 type Avail = 'base' | 'dlc' | 'none'
@@ -26,7 +27,7 @@ const dlcLabel = (p: PokemonData) =>
   availOf(p) !== 'dlc' ? '' : p.dex.kitakami !== undefined ? '碧の仮面' : '藍の円盤'
 
 /** 定番レイドポケモンの育成論一覧 */
-export function RaidBuilds({ data, owned }: Props) {
+export function RaidBuilds({ data, owned, onOpenDex }: Props) {
   const have = new Set(owned.map((m) => m.slug))
   const entries = RAID_BUILDS.flatMap((b) => {
     const p = data.pokemonBySlug.get(b.slug)
@@ -44,7 +45,7 @@ export function RaidBuilds({ data, owned }: Props) {
             <h4>{g.title}（{list.length}）</h4>
             <p className="raid-sub">{g.note}</p>
             <div className="builds">
-              {list.map(({ b, p }) => <Build key={b.slug} b={b} p={p} data={data} have={have.has(b.slug)} tag={dlcLabel(p)} />)}
+              {list.map(({ b, p }) => <Build key={b.slug} b={b} p={p} data={data} have={have.has(b.slug)} tag={dlcLabel(p)} onOpenDex={onOpenDex} />)}
             </div>
           </div>
         )
@@ -53,7 +54,7 @@ export function RaidBuilds({ data, owned }: Props) {
   )
 }
 
-function Build({ b, p, data, have, tag }: { b: RaidBuild; p: PokemonData; data: GameData; have: boolean; tag: string }) {
+function Build({ b, p, data, have, tag, onOpenDex }: { b: RaidBuild; p: PokemonData; data: GameData; have: boolean; tag: string; onOpenDex: (slug: string) => void }) {
   return (
     <details className="build">
       <summary>
@@ -73,6 +74,7 @@ function Build({ b, p, data, have, tag }: { b: RaidBuild; p: PokemonData; data: 
         <dt>技</dt><dd>{b.moves.join(' / ')}</dd>
       </dl>
       <ul>{b.notes.map((n, i) => <li key={i}>{n}</li>)}</ul>
+      <button className="ghost small" onClick={() => onOpenDex(p.slug)}>図鑑で見る（種族値・覚える技）</button>
     </details>
   )
 }
